@@ -37,6 +37,10 @@ public class InventoryThread extends Thread {
               epcbyte = reader.readFrom6C(1, 2, 3, this.passbtye);
               tidbyte = reader.readFrom6C(2, 0, 6, this.passbtye);
               Log.i(TAG, "run: sdwasdasdasd");
+              Log.i(TAG, "run: sdwasdasdasd");
+              Log.i(TAG, "run: sdwasdasdasd");
+              Log.i(TAG, "run: sdwasdasdasd");
+              Log.i(TAG, "run: sdwasdasdasd");
 
           }
           try {
