@@ -6,5 +6,7 @@
     <string name="end">结束扫描</string>
     <string name="isOpenNet">已打开网络，点击重试</string>
     <string name="clean_list">清空列表</string>
-
+    <string name="tid">TID</string>
+    <string name="epc">EPC</string>
+    <string name="time">时间</string>
 </resources>

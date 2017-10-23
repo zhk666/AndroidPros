@@ -2,13 +2,21 @@ package donwit.com.uhf;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.SimpleAdapter;
 import android.widget.Toast;
+
+import com.android.hdhe.uhf.reader.Tools;
 import com.android.hdhe.uhf.reader.UhfReader;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+import static donwit.com.uhf.Util.getDate;
 import static donwit.com.uhf.Util.isNetworkConnected;
 import static donwit.com.uhf.Util.setButtonClickable;
 import static donwit.com.uhf.Util.showMyToast;
@@ -22,8 +30,9 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
     private boolean isNet;
     private String IMEI;
     private boolean startFlag = false;
-    private InventoryThread thread;
     private ListView listViewData;
+    private ArrayList<EPC> listEPC;
+    private ArrayList<Map<String, Object>> listMap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,9 +45,10 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
             setButtonClickable(clean_btn,false);
             Toast.makeText(this,"获取实例失败！",Toast.LENGTH_SHORT).show();
         }else {
+            reader.setOutputPower(26);
             isNet = isNetworkConnected(this);
             initView();
-            thread = new InventoryThread(startFlag,reader,listViewData);
+            Thread thread = new InventoryThread();
             thread.start();
         }
     }
@@ -53,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
         clean_btn = (Button) findViewById(R.id.clean_btn);
         clean_btn.setOnClickListener(this);
         listViewData = (ListView) findViewById(R.id.epc_list);
+        listEPC = new ArrayList<>();
         if(isNet){
             clean_btn.setText(R.string.clean_list);
         }else {
@@ -68,17 +79,20 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
             case R.id.start_btn:
                 if(!startFlag){
                     startFlag = true;
-                    thread.setSuspendFlag(startFlag);
                     start_btn.setText(R.string.end);
                 }else {
                     startFlag = false;
-                    thread.setSuspendFlag(startFlag);
                     start_btn.setText(R.string.start);
                 }
                 break;
             case R.id.clean_btn:
                 if(isNet){
-                    cleanListView();
+                    if(listViewData.getCount()>0){
+                        cleanListView();
+                    }else {
+                        Toast toast = Toast.makeText(this,"没有相关数据！",Toast.LENGTH_LONG);
+                        showMyToast(toast,1000);
+                    }
                 }else {
                     isNet = Util.isNetworkConnected(this);
                     if(isNet){
@@ -96,7 +110,80 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
         }
     }
 
+    private class InventoryThread extends Thread{
+        private byte[] epcbyte;
+        private byte[] passbtye = Tools.HexString2Bytes("00000000");
+        private byte[] tidbyte;
+        @Override
+        public void run() {
+            while (true){
+                if(startFlag){
+                    epcbyte = reader.readFrom6C(1, 2, 3, this.passbtye);
+                    tidbyte = reader.readFrom6C(2, 0, 6, this.passbtye);
+                    if(epcbyte != null && epcbyte.length > 1 && tidbyte != null && tidbyte.length > 1){
+                        String tidStr = Tools.Bytes2HexString(tidbyte, tidbyte.length);
+                        String epcStr = Tools.Bytes2HexString(epcbyte, epcbyte.length);
+                        addToList(listEPC,tidStr,epcStr);
+                    }
+                }
+                try {
+                    Thread.sleep(40);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private void addToList(final ArrayList<EPC> list, final String tidStr, final String epcStr) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                //第一次读入数据
+                if(list.isEmpty()){
+                    EPC epc = new EPC();
+                    epc.setEpc(epcStr);
+                    epc.setTid(tidStr);
+                    epc.setIMEI(IMEI);
+                    epc.setScanDate(getDate());
+                    list.add(epc);
+                }else{
+                    for(int i = 0; i < list.size(); i++){
+                        EPC mEPC = list.get(i);
+                        //list中有此EPC
+                        if(epcStr.equals(mEPC.getEpc())){
+                            list.set(i, mEPC);
+                            break;
+                        }else if(i == (list.size() - 1)){
+                            //list中没有此epc
+                            EPC epc = new EPC();
+                            epc.setEpc(epcStr);
+                            epc.setTid(tidStr);
+                            epc.setIMEI(IMEI);
+                            epc.setScanDate(getDate());
+                            list.add(epc);
+                        }
+                    }
+                }
+                //将数据添加到ListView
+                listMap = new ArrayList<>();
+                for(EPC epcdata : list){
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("TID", epcdata.getTid());
+                    map.put("EPC", epcdata.getEpc());
+                    map.put("Date", epcdata.getScanDate());
+                    listMap.add(map);
+                }
+                listViewData.setAdapter(new SimpleAdapter(MainActivity.this,
+                        listMap, R.layout.listview_item,
+                        new String[]{"TID", "EPC", "Date"},
+                        new int[]{R.id.textView_id, R.id.textView_epc, R.id.textView_date}));
+            }
+        });
+    }
+
     private void cleanListView() {
-        Log.i("MyError", "清除成功");
+        listEPC.removeAll(listEPC);
+        listViewData.setAdapter(null);
     }
 }

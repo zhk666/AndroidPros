@@ -10,6 +10,8 @@ import android.telephony.TelephonyManager;
 import android.widget.Button;
 import android.widget.Toast;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
@@ -93,5 +95,10 @@ public class Util {
                 context.getSystemService(context.TELEPHONY_SERVICE);
         String imei = telephonyManager.getDeviceId();
         return imei;
+    }
+
+    public static String getDate(){
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return format.format(new Date());
     }
 }
