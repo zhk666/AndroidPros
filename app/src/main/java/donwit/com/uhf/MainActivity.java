@@ -1,12 +1,17 @@
 package donwit.com.uhf;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.hdhe.uhf.reader.Tools;
@@ -16,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import static android.widget.Toast.makeText;
 import static donwit.com.uhf.Util.getDate;
 import static donwit.com.uhf.Util.isNetworkConnected;
 import static donwit.com.uhf.Util.setButtonClickable;
@@ -33,7 +39,11 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
     private ListView listViewData;
     private ArrayList<EPC> listEPC;
     private ArrayList<Map<String, Object>> listMap;
-
+    private SharedPreferences sp;
+    private String Ip;
+    private String Port;
+    private String Power;
+    private TextView now_power;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,9 +53,8 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
             setButtonClickable(start_btn,false);
             setButtonClickable(setting_btn,false);
             setButtonClickable(clean_btn,false);
-            Toast.makeText(this,"获取实例失败！",Toast.LENGTH_SHORT).show();
+            makeText(this,"获取实例失败！",Toast.LENGTH_SHORT).show();
         }else {
-            reader.setOutputPower(26);
             isNet = isNetworkConnected(this);
             initView();
             Thread thread = new InventoryThread();
@@ -54,16 +63,23 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
     }
 
     private void initView() {
-        Util.initSoundPool(this);
+        sp = this.getSharedPreferences("config",this.MODE_PRIVATE);
         IMEI = Util.getIMEI(this);
+        Util.initSoundPool(this);
         start_btn = (Button) findViewById(R.id.start_btn);
         start_btn.setOnClickListener(this);
         setting_btn = (Button) findViewById(R.id.setting_btn);
         setting_btn.setOnClickListener(this);
         clean_btn = (Button) findViewById(R.id.clean_btn);
         clean_btn.setOnClickListener(this);
+        now_power = (TextView) findViewById(R.id.now_power);
         listViewData = (ListView) findViewById(R.id.epc_list);
         listEPC = new ArrayList<>();
+        Ip = sp.getString("IP","127.0.0.1");
+        Port = sp.getString("Port","8080");
+        Power = sp.getString("Power","26");
+        now_power.setText(Power+"dBm");
+        reader.setOutputPower(Integer.parseInt(Power));
         if(isNet){
             clean_btn.setText(R.string.clean_list);
         }else {
@@ -73,15 +89,43 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
         }
     }
 
+    Handler handler = new Handler(){
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what){
+                case sendData.SEND_SUCCESS:
+                    Util.play(1,0);
+                    Toast toast_success = Toast.makeText(MainActivity.this,
+                            R.string.upload_success,Toast.LENGTH_SHORT);
+                    showMyToast(toast_success,1000);
+                    break;
+                case sendData.SEND_FAIL:
+                    Toast toast_fail = Toast.makeText(MainActivity.this,
+                            R.string.upload_fail,Toast.LENGTH_SHORT);
+                    showMyToast(toast_fail,1000);
+                    break;
+                case sendData.CONN_ERROR:
+                    Toast toast_error = Toast.makeText(MainActivity.this,
+                            R.string.conn_error,Toast.LENGTH_SHORT);
+                    showMyToast(toast_error,1000);
+                    break;
+                default:
+                    break;
+            }
+        }
+    };
+
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.start_btn:
                 if(!startFlag){
                     startFlag = true;
+                    setButtonClickable(setting_btn,false);
                     start_btn.setText(R.string.end);
                 }else {
                     startFlag = false;
+                    setButtonClickable(setting_btn,true);
                     start_btn.setText(R.string.start);
                 }
                 break;
@@ -90,7 +134,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
                     if(listViewData.getCount()>0){
                         cleanListView();
                     }else {
-                        Toast toast = Toast.makeText(this,"没有相关数据！",Toast.LENGTH_LONG);
+                        Toast toast = makeText(this,R.string.no_data,Toast.LENGTH_LONG);
                         showMyToast(toast,1000);
                     }
                 }else {
@@ -100,20 +144,23 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
                         setButtonClickable(start_btn,true);
                         setButtonClickable(setting_btn,true);
                     }else {
-                        Toast toast = Toast.makeText(this,"请打开网络",Toast.LENGTH_LONG);
+                        Toast toast = makeText(this,R.string.openNet,Toast.LENGTH_LONG);
                         showMyToast(toast,1000);
                     }
                 }
                 break;
+            case R.id.setting_btn:
+                Intent intent = new Intent(this,SettingActivity.class);
+                startActivity(intent);
             default:
                 break;
         }
     }
 
     private class InventoryThread extends Thread{
-        private byte[] epcbyte;
+        private volatile byte[] epcbyte;
         private byte[] passbtye = Tools.HexString2Bytes("00000000");
-        private byte[] tidbyte;
+        private volatile byte[] tidbyte;
         @Override
         public void run() {
             while (true){
@@ -147,11 +194,12 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
                     epc.setIMEI(IMEI);
                     epc.setScanDate(getDate());
                     list.add(epc);
+                    UpLoadData(epc);
                 }else{
                     for(int i = 0; i < list.size(); i++){
                         EPC mEPC = list.get(i);
                         //list中有此EPC
-                        if(epcStr.equals(mEPC.getEpc())){
+                        if(epcStr.equals(mEPC.getEpc()) || tidStr.equals(mEPC.getTid())){
                             list.set(i, mEPC);
                             break;
                         }else if(i == (list.size() - 1)){
@@ -161,6 +209,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
                             epc.setTid(tidStr);
                             epc.setIMEI(IMEI);
                             epc.setScanDate(getDate());
+                            UpLoadData(epc);
                             list.add(epc);
                         }
                     }
@@ -180,6 +229,11 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
                         new int[]{R.id.textView_id, R.id.textView_epc, R.id.textView_date}));
             }
         });
+    }
+
+    private void UpLoadData(EPC epc) {
+        sendData sd = new sendData(handler,Ip,Port);
+        sd.sendDataToServer(epc);
     }
 
     private void cleanListView() {

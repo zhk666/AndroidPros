@@ -10,12 +10,15 @@ import android.telephony.TelephonyManager;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.regex.Pattern;
 
 /**
  * @author Admin
@@ -25,6 +28,7 @@ public class Util {
     public static SoundPool sp ;
     public static Map<Integer, Integer> suondMap;
     public static Context context;
+    public static Gson gson = new Gson();
 
     //初始化声音池
     public static void initSoundPool(Context context){
@@ -100,5 +104,15 @@ public class Util {
     public static String getDate(){
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         return format.format(new Date());
+    }
+
+    public static boolean isIpAddress(String str){
+        String num = "(25[0-5]|2[0-4]\\d|[0-1]\\d{2}|[1-9]?\\d)";
+        String regex = "^" + num + "\\." + num + "\\." + num + "\\." + num + "$";
+        return Pattern.compile(regex).matcher(str).matches();
+    }
+
+    public static String ObjectToJsonStr(EPC epc){
+        return gson.toJson(epc);
     }
 }

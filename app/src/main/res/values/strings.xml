@@ -9,4 +9,28 @@
     <string name="tid">TID</string>
     <string name="epc">EPC</string>
     <string name="time">时间</string>
+    <string name="check_power">请选择功率:</string>
+    <string name="IP">IP地址:</string>
+    <string name="Port">端口号:</string>
+    <string name="inputIP">请输入IP地址</string>
+    <string name="inputPort">请输入端口号</string>
+    <string name="dBm">dBm</string>
+    <string name="click_error">点击错误！</string>
+    <string name="ip_error">IP地址格式错误！</string>
+    <string name="setting_success">设置成功！</string>
+    <string name="setting_fail">设置失败！</string>
+    <string name="upload_success">上传成功！</string>
+    <string name="upload_fail">上传失败！</string>
+    <string name="conn_error">连接服务器出现错误！</string>
+    <string name="no_data">没有相关数据！</string>
+    <string name="openNet">请打开网络!</string>
+    <string name="input_error">输入错误！</string>
+    <string-array name="power_list">
+        <item>26</item>
+        <item>24</item>
+        <item>22</item>
+        <item>20</item>
+        <item>18</item>
+        <item>16</item>
+    </string-array>
 </resources>
