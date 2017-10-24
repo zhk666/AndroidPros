@@ -1,8 +1,12 @@
 package donwit.com.uhf;
 
+import android.content.Context;
 import android.os.Handler;
 
 import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.SocketAddress;
 import java.net.URL;
 import java.net.URLEncoder;
 
@@ -19,19 +23,21 @@ public class sendData {
     public static final int SEND_SUCCESS=0x123;
     public static final int SEND_FAIL=0x124;
     public static final int CONN_ERROR=0x125;
+    private Context context;
 
-    public sendData(Handler handler, String IP, String port) {
+    public sendData(Handler handler, String IP, String port,Context context) {
         this.handler = handler;
         this.IP = IP;
         this.Port = port;
         this.URLStr = "http://"+this.IP+":"+this.Port+"/androidConnectionTest/myservlet";
+        this.context = context;
     }
 
     public void sendDataToServer(final EPC epc){
         new Thread(new Runnable() {
             @Override
             public void run() {
-                String flag = sendGetReq(epc,"utf-8");
+                String flag = sendGetReq(epc,"utf-8",context);
                 switch (flag){
                     case "success":
                         handler.sendEmptyMessage(SEND_SUCCESS);
@@ -51,13 +57,20 @@ public class sendData {
      * @param
      * @return
      */
-    private String sendGetReq(EPC epc,String encoding){
+    private String sendGetReq(EPC epc, String encoding, Context context){
 //        string url = http://localhost:8088/androidConnectionTest/myservlet?
         StringBuffer sb = new StringBuffer(URLStr);
         String jsonStr = Util.ObjectToJsonStr(epc);
+        //电信代理服务器地址10.0.0.200，端口80（推荐）或9201
+        SocketAddress sa = new InetSocketAddress("10.0.0.200",80);
+        Proxy proxy = new Proxy(Proxy.Type.HTTP,sa);
         try{
             sb.append("?epcJson="+URLEncoder.encode(jsonStr,encoding));
-            conn=(HttpURLConnection) new URL(sb.toString()).openConnection();
+            if(Util.checkNetworkType(context)){
+                conn=(HttpURLConnection) new URL(sb.toString()).openConnection(proxy);
+            }else {
+                conn=(HttpURLConnection) new URL(sb.toString()).openConnection();
+            }
             conn.setConnectTimeout(3000);
             conn.setRequestMethod("GET");//设置请求方式为GET
             if(conn.getResponseCode() == 200){

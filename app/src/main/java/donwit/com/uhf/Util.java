@@ -25,13 +25,13 @@ import java.util.regex.Pattern;
  * @version 工具类
  */
 public class Util {
-    public static SoundPool sp ;
+    public static SoundPool sp;
     public static Map<Integer, Integer> suondMap;
     public static Context context;
     public static Gson gson = new Gson();
 
     //初始化声音池
-    public static void initSoundPool(Context context){
+    public static void initSoundPool(Context context) {
         Util.context = context;
         sp = new SoundPool(1, AudioManager.STREAM_MUSIC, 1);
         suondMap = new HashMap<Integer, Integer>();
@@ -39,8 +39,8 @@ public class Util {
     }
 
     //播放声音池声音
-    public static  void play(int sound, int number){
-        AudioManager am = (AudioManager)Util.context.getSystemService(Util.context.AUDIO_SERVICE);
+    public static void play(int sound, int number) {
+        AudioManager am = (AudioManager) Util.context.getSystemService(Util.context.AUDIO_SERVICE);
         //返回当前AudioManager对象的音量值
         float audioCurrentVolume = am.getStreamVolume(AudioManager.STREAM_MUSIC);
         sp.play(
@@ -67,11 +67,11 @@ public class Util {
                 toast.cancel();
                 timer.cancel();
             }
-        }, cnt );
+        }, cnt);
     }
 
     //判断是否有网络
-    public static   boolean isNetworkConnected(Context context) {
+    public static boolean isNetworkConnected(Context context) {
         if (context != null) {
             ConnectivityManager mConnectivityManager = (ConnectivityManager) context
                     .getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -84,11 +84,11 @@ public class Util {
     }
 
     //设置按钮是否可用
-    public static void setButtonClickable(Button button, boolean flag){
+    public static void setButtonClickable(Button button, boolean flag) {
         button.setClickable(flag);
-        if(flag){
+        if (flag) {
             button.setTextColor(Color.BLACK);
-        }else{
+        } else {
             button.setTextColor(Color.GRAY);
         }
     }
@@ -101,18 +101,36 @@ public class Util {
         return imei;
     }
 
-    public static String getDate(){
+    public static String getDate() {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         return format.format(new Date());
     }
 
-    public static boolean isIpAddress(String str){
+    public static boolean isIpAddress(String str) {
         String num = "(25[0-5]|2[0-4]\\d|[0-1]\\d{2}|[1-9]?\\d)";
         String regex = "^" + num + "\\." + num + "\\." + num + "\\." + num + "$";
         return Pattern.compile(regex).matcher(str).matches();
     }
 
-    public static String ObjectToJsonStr(EPC epc){
+    public static String ObjectToJsonStr(EPC epc) {
         return gson.toJson(epc);
+    }
+
+    /**
+     * 检测当前使用的网络类型是WIFI还是WAP
+     *
+     * @param context
+     */
+    public static boolean checkNetworkType(Context context) {
+        if(context != null){
+            NetworkInfo networkInfo = ((ConnectivityManager) context
+                    .getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE)).getActiveNetworkInfo();
+            if (networkInfo != null) {
+                if (!"wifi".equals(networkInfo.getTypeName().toLowerCase())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

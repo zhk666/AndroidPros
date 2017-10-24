@@ -232,7 +232,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
     }
 
     private void UpLoadData(EPC epc) {
-        sendData sd = new sendData(handler,Ip,Port);
+        sendData sd = new sendData(handler,Ip,Port,this);
         sd.sendDataToServer(epc);
     }
 
