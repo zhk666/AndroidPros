@@ -7,7 +7,7 @@ package donwit.com.uhf;
 public class EPC {
     private String Epc;
     private String Tid;
-    private String scanDate;
+    private String Date;
     private String IMEI;
 
     public String getEpc() {
@@ -26,12 +26,12 @@ public class EPC {
         Tid = tid;
     }
 
-    public String getScanDate() {
-        return scanDate;
+    public String getDate() {
+        return Date;
     }
 
-    public void setScanDate(String scanDate) {
-        this.scanDate = scanDate;
+    public void setDate(String Date) {
+        this.Date = Date;
     }
 
     public String getIMEI() {
@@ -47,7 +47,7 @@ public class EPC {
         return "EPC{" +
                 "Epc='" + Epc + '\'' +
                 ", Tid='" + Tid + '\'' +
-                ", scanDate='" + scanDate + '\'' +
+                ", Date='" + Date + '\'' +
                 ", IMEI='" + IMEI + '\'' +
                 '}';
     }

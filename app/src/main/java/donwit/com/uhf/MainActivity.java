@@ -1,10 +1,12 @@
 package donwit.com.uhf;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.PowerManager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -44,6 +46,21 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
     private String Port;
     private String Power;
     private TextView now_power;
+    private PowerManager pm;
+    private PowerManager.WakeLock wakeLock;
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        acquireWakeLock();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        releaseWakeLock();
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -84,6 +101,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
             clean_btn.setText(R.string.clean_list);
         }else {
             clean_btn.setText(R.string.isOpenNet);
+            setButtonClickable(start_btn,false);
             setButtonClickable(start_btn,false);
             setButtonClickable(setting_btn,false);
         }
@@ -192,7 +210,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
                     epc.setEpc(epcStr);
                     epc.setTid(tidStr);
                     epc.setIMEI(IMEI);
-                    epc.setScanDate(getDate());
+                    epc.setDate(getDate());
                     list.add(epc);
                     UpLoadData(epc);
                 }else{
@@ -208,7 +226,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
                             epc.setEpc(epcStr);
                             epc.setTid(tidStr);
                             epc.setIMEI(IMEI);
-                            epc.setScanDate(getDate());
+                            epc.setDate(getDate());
                             UpLoadData(epc);
                             list.add(epc);
                         }
@@ -220,7 +238,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
                     Map<String, Object> map = new HashMap<>();
                     map.put("TID", epcdata.getTid());
                     map.put("EPC", epcdata.getEpc());
-                    map.put("Date", epcdata.getScanDate());
+                    map.put("Date", epcdata.getDate());
                     listMap.add(map);
                 }
                 listViewData.setAdapter(new SimpleAdapter(MainActivity.this,
@@ -239,5 +257,24 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
     private void cleanListView() {
         listEPC.removeAll(listEPC);
         listViewData.setAdapter(null);
+    }
+
+    private void acquireWakeLock() {
+        if (null == wakeLock) {
+            PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK
+                    | PowerManager.ON_AFTER_RELEASE, getClass()
+                    .getCanonicalName());
+            if (null != wakeLock) {
+                wakeLock.acquire();
+            }
+        }
+    }
+
+    private void releaseWakeLock() {
+        if (null != wakeLock && wakeLock.isHeld()) {
+            wakeLock.release();
+            wakeLock = null;
+        }
     }
 }
