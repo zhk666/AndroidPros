@@ -65,15 +65,16 @@ public class sendData {
         if(epc != null){
             String jsonStr = Util.ObjectToJsonStr(epc);
             //电信代理服务器地址10.0.0.200，端口80（推荐）或9201
-            SocketAddress sa = new InetSocketAddress("10.0.0.200",80);
-            Proxy proxy = new Proxy(Proxy.Type.HTTP,sa);
+//            SocketAddress sa = new InetSocketAddress("10.0.0.200",80);
+//            Proxy proxy = new Proxy(Proxy.Type.HTTP,sa);
             try{
                 sb.append("?epcJson="+URLEncoder.encode(jsonStr,"utf-8"));
-                if(Util.checkNetworkType(mcontext)){
-                    conn=(HttpURLConnection) new URL(sb.toString()).openConnection(proxy);
-                }else {
-                    conn=(HttpURLConnection) new URL(sb.toString()).openConnection();
-                }
+//                if(Util.checkNetworkType(mcontext)){
+//                    conn=(HttpURLConnection) new URL(sb.toString()).openConnection(proxy);
+//                }else {
+//                    conn=(HttpURLConnection) new URL(sb.toString()).openConnection();
+//                }
+                conn=(HttpURLConnection) new URL(sb.toString()).openConnection();
                 conn.setConnectTimeout(3000);
                 conn.setRequestMethod("GET");//设置请求方式为GET
                 if(conn.getResponseCode() == 200){
@@ -100,11 +101,12 @@ public class sendData {
             Proxy proxy = new Proxy(Proxy.Type.HTTP,sa);
             try{
                 URL url = new URL(URLStr);
-                if(Util.checkNetworkType(mcontext)){
-                    conn=(HttpURLConnection) url.openConnection(proxy);
-                }else {
-                    conn=(HttpURLConnection) url.openConnection();
-                }
+//                if(Util.checkNetworkType(mcontext)){
+//                    conn=(HttpURLConnection) url.openConnection(proxy);
+//                }else {
+//                    conn=(HttpURLConnection) url.openConnection();
+//                }
+                conn=(HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setDoInput(true);
                 conn.setDoOutput(true);
