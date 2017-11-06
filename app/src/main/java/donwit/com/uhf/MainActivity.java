@@ -11,18 +11,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
-import android.widget.ListView;
-import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import com.android.hdhe.uhf.reader.Tools;
 import com.android.hdhe.uhf.reader.UhfReader;
-
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-
+import java.util.List;
 import static android.widget.Toast.makeText;
 import static donwit.com.uhf.Util.getDate;
 import static donwit.com.uhf.Util.isNetworkConnected;
@@ -36,18 +30,17 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
     private Button setting_btn;
     private Button clean_btn;
     private boolean isNet;
-    private String IMEI;
+    private String IMEI ;
     private boolean startFlag = false;
-    private ListView listViewData;
     private ArrayList<EPC> listEPC;
-    private ArrayList<Map<String, Object>> listMap;
     private SharedPreferences sp;
     private String Ip;
     private String Port;
     private String Power;
+    private int Sum;
     private TextView now_power;
-    private PowerManager pm;
     private PowerManager.WakeLock wakeLock;
+    private TextView sum_view;
 
     @Override
     protected void onStart() {
@@ -81,8 +74,8 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
 
     private void initView() {
         sp = this.getSharedPreferences("config",this.MODE_PRIVATE);
-        IMEI = Util.getIMEI(this);
         Util.initSoundPool(this);
+        IMEI = Util.getIMEI(this);
         start_btn = (Button) findViewById(R.id.start_btn);
         start_btn.setOnClickListener(this);
         setting_btn = (Button) findViewById(R.id.setting_btn);
@@ -90,21 +83,23 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
         clean_btn = (Button) findViewById(R.id.clean_btn);
         clean_btn.setOnClickListener(this);
         now_power = (TextView) findViewById(R.id.now_power);
-        listViewData = (ListView) findViewById(R.id.epc_list);
         listEPC = new ArrayList<>();
         Ip = sp.getString("IP","127.0.0.1");
         Port = sp.getString("Port","8080");
         Power = sp.getString("Power","26");
+        Sum = sp.getInt("Sum",0);
         now_power.setText(Power+"dBm");
         reader.setOutputPower(Integer.parseInt(Power));
         if(isNet){
-            clean_btn.setText(R.string.clean_list);
+            clean_btn.setText(R.string.clean_sum);
         }else {
             clean_btn.setText(R.string.isOpenNet);
             setButtonClickable(start_btn,false);
             setButtonClickable(start_btn,false);
             setButtonClickable(setting_btn,false);
         }
+        sum_view = (TextView) findViewById(R.id.txt_num);
+        sum_view.setText(String.valueOf(Sum));
     }
 
     Handler handler = new Handler(){
@@ -112,10 +107,8 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
         public void handleMessage(Message msg) {
             switch (msg.what){
                 case sendData.SEND_SUCCESS:
+                    Sum+=1;
                     Util.play(1,0);
-                    Toast toast_success = Toast.makeText(MainActivity.this,
-                            R.string.upload_success,Toast.LENGTH_SHORT);
-                    showMyToast(toast_success,1000);
                     break;
                 case sendData.SEND_FAIL:
                     Toast toast_fail = Toast.makeText(MainActivity.this,
@@ -149,16 +142,15 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
                 break;
             case R.id.clean_btn:
                 if(isNet){
-                    if(listViewData.getCount()>0){
-                        cleanListView();
-                    }else {
-                        Toast toast = makeText(this,R.string.no_data,Toast.LENGTH_LONG);
-                        showMyToast(toast,1000);
-                    }
+                    SharedPreferences.Editor edit = sp.edit();
+                    edit.putInt("Sum",0);
+                    edit.commit();
+                    this.finish();
+                    System.exit(0);
                 }else {
                     isNet = Util.isNetworkConnected(this);
                     if(isNet){
-                        clean_btn.setText(R.string.clean_list);
+                        clean_btn.setText(R.string.clean_sum);
                         setButtonClickable(start_btn,true);
                         setButtonClickable(setting_btn,true);
                     }else {
@@ -176,19 +168,28 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
     }
 
     private class InventoryThread extends Thread{
-        private volatile byte[] epcbyte;
-        private byte[] passbtye = Tools.HexString2Bytes("00000000");
-        private volatile byte[] tidbyte;
+//        private volatile byte[] epcbyte;
+//        private byte[] passbtye = Tools.HexString2Bytes("00000000");
+//        private volatile byte[] tidbyte;
+        private List<byte[]> epcList;
         @Override
         public void run() {
             while (true){
                 if(startFlag){
-                    epcbyte = reader.readFrom6C(1, 2, 3, this.passbtye);
-                    tidbyte = reader.readFrom6C(2, 0, 6, this.passbtye);
-                    if(epcbyte != null && epcbyte.length > 1 && tidbyte != null && tidbyte.length > 1){
-                        String tidStr = Tools.Bytes2HexString(tidbyte, tidbyte.length);
-                        String epcStr = Tools.Bytes2HexString(epcbyte, epcbyte.length);
-                        addToList(listEPC,tidStr,epcStr);
+//                    epcbyte = reader.readFrom6C(1, 2, 3, this.passbtye);
+//                    tidbyte = reader.readFrom6C(2, 0, 6, this.passbtye);
+//                    if(epcbyte != null && epcbyte.length > 1 && tidbyte != null && tidbyte.length > 1){
+//                        String tidStr = Tools.Bytes2HexString(tidbyte, tidbyte.length);
+//                        String epcStr = Tools.Bytes2HexString(epcbyte, epcbyte.length);
+//                        addToList(listEPC,epcStr);
+//                    }
+                    epcList = reader.inventoryRealTime();
+                    if(epcList != null && !epcList.isEmpty()){
+                        //播放提示音
+                        for(byte[] epc:epcList){
+                            String epcStr = Tools.Bytes2HexString(epc, epc.length);
+                            addToList(listEPC, epcStr);
+                        }
                     }
                 }
                 try {
@@ -200,7 +201,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
         }
     }
 
-    private void addToList(final ArrayList<EPC> list, final String tidStr, final String epcStr) {
+    private void addToList(final ArrayList<EPC> list, final String epcStr) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -208,7 +209,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
                 if(list.isEmpty()){
                     EPC epc = new EPC();
                     epc.setEpc(epcStr);
-                    epc.setTid(tidStr);
                     epc.setIMEI(IMEI);
                     epc.setDate(getDate());
                     list.add(epc);
@@ -217,34 +217,36 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
                     for(int i = 0; i < list.size(); i++){
                         EPC mEPC = list.get(i);
                         //list中有此EPC
-                        if(epcStr.equals(mEPC.getEpc()) || tidStr.equals(mEPC.getTid())){
+                        if(epcStr.equals(mEPC.getEpc())){
                             list.set(i, mEPC);
                             break;
                         }else if(i == (list.size() - 1)){
                             //list中没有此epc
                             EPC epc = new EPC();
                             epc.setEpc(epcStr);
-                            epc.setTid(tidStr);
                             epc.setIMEI(IMEI);
                             epc.setDate(getDate());
-                            UpLoadData(epc);
                             list.add(epc);
+                            UpLoadData(epc);
                         }
                     }
                 }
                 //将数据添加到ListView
-                listMap = new ArrayList<>();
-                for(EPC epcdata : list){
-                    Map<String, Object> map = new HashMap<>();
-                    map.put("TID", epcdata.getTid());
-                    map.put("EPC", epcdata.getEpc());
-                    map.put("Date", epcdata.getDate());
-                    listMap.add(map);
-                }
-                listViewData.setAdapter(new SimpleAdapter(MainActivity.this,
-                        listMap, R.layout.listview_item,
-                        new String[]{"TID", "EPC", "Date"},
-                        new int[]{R.id.textView_id, R.id.textView_epc, R.id.textView_date}));
+//                listMap = new ArrayList<>();
+//                for(EPC epcdata : list){
+//                    Map<String, Object> map = new HashMap<>();
+//                    map.put("EPC", epcdata.getEpc());
+//                    map.put("Date", epcdata.getDate());
+//                    listMap.add(map);
+//                }
+//                listViewData.setAdapter(new SimpleAdapter(MainActivity.this,
+//                        listMap, R.layout.listview_item,
+//                        new String[]{"EPC", "Date"},
+//                        new int[]{R.id.textView_epc, R.id.textView_date}));
+                sum_view.setText(String.valueOf(Sum));
+                SharedPreferences.Editor edit = sp.edit();
+                edit.putInt("Sum",Sum);
+                edit.commit();
             }
         });
     }
@@ -252,11 +254,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
     private void UpLoadData(EPC epc) {
         sendData sd = new sendData(handler,Ip,Port,this);
         sd.sendDataToServer(epc);
-    }
-
-    private void cleanListView() {
-        listEPC.removeAll(listEPC);
-        listViewData.setAdapter(null);
     }
 
     private void acquireWakeLock() {

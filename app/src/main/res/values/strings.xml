@@ -4,11 +4,7 @@
     <string name="power">当前功率:</string>
     <string name="start">开始扫描</string>
     <string name="end">结束扫描</string>
-    <string name="isOpenNet">已打开网络，点击重试</string>
-    <string name="clean_list">清空列表</string>
-    <string name="tid">TID</string>
-    <string name="epc">EPC</string>
-    <string name="time">时间</string>
+    <string name="isOpenNet">重新连接</string>
     <string name="check_power">请选择功率:</string>
     <string name="IP">IP地址:</string>
     <string name="Port">端口号:</string>
@@ -22,9 +18,10 @@
     <string name="upload_success">上传成功！</string>
     <string name="upload_fail">上传失败！</string>
     <string name="conn_error">连接服务器出现错误！</string>
-    <string name="no_data">没有相关数据！</string>
     <string name="openNet">请打开网络!</string>
     <string name="input_error">输入错误！</string>
+    <string name="scan_num">扫描个数:</string>
+    <string name="clean_sum">退出</string>
     <string-array name="power_list">
         <item>26</item>
         <item>24</item>

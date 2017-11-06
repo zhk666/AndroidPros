@@ -6,7 +6,6 @@ package donwit.com.uhf;
  */
 public class EPC {
     private String Epc;
-    private String Tid;
     private String Date;
     private String IMEI;
 
@@ -16,14 +15,6 @@ public class EPC {
 
     public void setEpc(String epc) {
         Epc = epc;
-    }
-
-    public String getTid() {
-        return Tid;
-    }
-
-    public void setTid(String tid) {
-        Tid = tid;
     }
 
     public String getDate() {
@@ -40,15 +31,5 @@ public class EPC {
 
     public void setIMEI(String IMEI) {
         this.IMEI = IMEI;
-    }
-
-    @Override
-    public String toString() {
-        return "EPC{" +
-                "Epc='" + Epc + '\'' +
-                ", Tid='" + Tid + '\'' +
-                ", Date='" + Date + '\'' +
-                ", IMEI='" + IMEI + '\'' +
-                '}';
     }
 }
