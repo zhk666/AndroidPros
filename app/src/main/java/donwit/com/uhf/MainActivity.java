@@ -72,6 +72,9 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
         }
     }
 
+    /**
+     * 初始化各个组件
+     */
     private void initView() {
         sp = this.getSharedPreferences("config",this.MODE_PRIVATE);
         Util.initSoundPool(this);
@@ -102,6 +105,9 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
         sum_view.setText(String.valueOf(Sum));
     }
 
+    /**
+     * 服务器相应之后的回调函数
+     */
     Handler handler = new Handler(){
         @Override
         public void handleMessage(Message msg) {
@@ -126,6 +132,10 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
         }
     };
 
+    /**
+     * 按钮点击事件
+     * @param v 事件对象
+     */
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
@@ -167,6 +177,9 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
         }
     }
 
+    /**
+     * 盘存线程
+     */
     private class InventoryThread extends Thread{
 //        private volatile byte[] epcbyte;
 //        private byte[] passbtye = Tools.HexString2Bytes("00000000");
@@ -251,11 +264,15 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
         });
     }
 
+    //上传数据
     private void UpLoadData(EPC epc) {
         sendData sd = new sendData(handler,Ip,Port,this);
         sd.sendDataToServer(epc);
     }
 
+    /**
+     * 获得电源管理对象，让手持机息屏了之后线程不被杀死
+     */
     private void acquireWakeLock() {
         if (null == wakeLock) {
             PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
@@ -268,6 +285,9 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
         }
     }
 
+    /**
+     * 电源管理对象资源
+     */
     private void releaseWakeLock() {
         if (null != wakeLock && wakeLock.isHeld()) {
             wakeLock.release();

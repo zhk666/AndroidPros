@@ -37,6 +37,7 @@ public class SettingActivity extends AppCompatActivity implements OnClickListene
         }
     }
 
+    //初始化组件
     private void initView() {
         sp = this.getSharedPreferences("config",this.MODE_PRIVATE);
         setting = (Button) findViewById(R.id.setting);
@@ -51,6 +52,10 @@ public class SettingActivity extends AppCompatActivity implements OnClickListene
     }
 
 
+    /**
+     * 设置按钮，然后把数据存在SharedPreferences
+     * @param v
+     */
     @Override
     public void onClick(View v) {
         switch (v.getId()){
@@ -92,6 +97,10 @@ public class SettingActivity extends AppCompatActivity implements OnClickListene
         }
     }
 
+    /**
+     * 让spinner组件自动选中上次设置的值
+     * @param str
+     */
     private void setSelectValue(String str){
         SpinnerAdapter sa = spinner.getAdapter();
         int item = sa.getCount();

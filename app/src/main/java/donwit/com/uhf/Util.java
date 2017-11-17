@@ -106,6 +106,11 @@ public class Util {
         return format.format(new Date());
     }
 
+    /**
+     * 判断是否为正确的ip地址
+     * @param str ip导致字符串
+     * @return 是否正确
+     */
     public static boolean isIpAddress(String str) {
         String num = "(25[0-5]|2[0-4]\\d|[0-1]\\d{2}|[1-9]?\\d)";
         String regex = "^" + num + "\\." + num + "\\." + num + "\\." + num + "$";
